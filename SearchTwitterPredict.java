@@ -21,42 +21,35 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class SearchTwitter {
-	static String testFile = "data/SemEval2018/dev/us_trial.text";
-	static String labelFile = "data/SemEval2018/dev/us_trial.labels";
-	static String exactMatch = "data/SemEval2018/dev/exactMatch.csv";
-	static String predicted = "data/SemEval2018/dev/predicted.txt";
+public class SearchTwitterPredict {
+	static String testFile = "data/SemEval2018/test_semeval2018task2_text/us_test.text";
+	static String predicted = "data/SemEval2018/test_semeval2018task2_text/predicted.labels";
 	// static BufferedWriter out;
 	static BufferedWriter outPredicted;
 	static char seperator = ';';
 
 	static HashMap<String, Integer> emojiMap;
-	static ArrayList<Integer> labelList;
 
-	// static int found = 0;
-	static int found = 14680;
-	static int correct = 17904;
+	static int found = 0;
 
-	// static int correct = 0;
+	static int reservePoint = 19192;
+
 	public static void main(String[] args) throws IOException, InterruptedException {
 
 		FileWriter Predictedstream = new FileWriter(predicted, true);
 		outPredicted = new BufferedWriter(Predictedstream);
 
-		emojiMap = InitialEmojiMap();
-		// TODO: return some statistics from the trainig set
-		// TODO: this is for development, need to modify
-		LoadLabels();
+		InitialEmojiMap();
 
 		BufferedReader br = new BufferedReader(new FileReader(testFile));
 		String line = "";
 		int id = 0;
 		while ((line = br.readLine()) != null) {
-			System.out.println(id);
-			if (id < -1){
+			if (id < reservePoint) {
 				id++;
 				continue;
 			}
+			System.out.println(id);
 			System.out.println("line: " + line);
 
 			LocalQuery query = new LocalQuery(line);
@@ -66,16 +59,8 @@ public class SearchTwitter {
 			outPredicted.write("\r\n");
 			outPredicted.flush();
 
-			int TrueLabelNumber = labelList.get(id);
-			String TrueLabelText = getKeyByValue(emojiMap, TrueLabelNumber);
-
-			if (predicted == TrueLabelNumber)
-				correct += 1;
-
 			System.out.println("Predeicted: " + getKeyByValue(emojiMap, predicted));
-			System.out.println("TrueLable: " + TrueLabelText);
 			System.out.println("found: " + found);
-			System.out.println("correct: " + correct + "\taccuracy: " + correct * 1.0 / (id + 1));
 
 			id++;
 
@@ -95,9 +80,9 @@ public class SearchTwitter {
 			return 2;
 
 		Document doc = null;
-		
+
 		int tmp = 0;
-		while (tmp <500){
+		while (tmp < 500) {
 			try {
 				doc = Jsoup.connect("https://twitter.com/search?q=" + query.query).get();
 				break;
@@ -108,7 +93,7 @@ public class SearchTwitter {
 				tmp++;
 			}
 		}
-		
+
 		Element results = doc.getElementById("stream-items-id");
 		Elements list = null;
 		try {
@@ -195,19 +180,8 @@ public class SearchTwitter {
 		}
 	};
 
-	private static void LoadLabels() throws IOException {
-		labelList = new ArrayList<Integer>();
-		BufferedReader br = new BufferedReader(new FileReader(labelFile));
-		String line = "";
-		while ((line = br.readLine()) != null) {
-			labelList.add(Integer.valueOf(line));
-		}
-		System.out.println("label list size: " + labelList.size());
-		br.close();
-	}
-
-	static HashMap<String, Integer> InitialEmojiMap() {
-		HashMap<String, Integer> emojiMap = new HashMap<String, Integer>();
+	private static void InitialEmojiMap() {
+		emojiMap = new HashMap<String, Integer>();
 		emojiMap.put("Heart suit", 0);
 		emojiMap.put("Heavy red heart", 0);
 		emojiMap.put("Growing heart", 0);
@@ -275,8 +249,6 @@ public class SearchTwitter {
 		emojiMap.put("Face with stuck-out tongue and tightly-closed eyes", 19);
 		emojiMap.put("Face with stuck-out tongue", 19);
 		emojiMap.put("Crazy face", 19);
-		
-		return emojiMap;
 	}
 
 	public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
